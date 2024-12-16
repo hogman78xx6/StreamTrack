@@ -31,7 +31,7 @@ struct AddChannelView: View {
               Text(String(describing: channelType)).tag(channelType)
             }
           }
-            
+          .pickerStyle(.menu)
         }
         .navigationTitle("Add Channel")
         .toolbar {
@@ -51,6 +51,7 @@ struct AddChannelView: View {
               dismiss()
               
             }
+            .buttonStyle(.bordered)
             .disabled(!isFormValid)
           }
         }

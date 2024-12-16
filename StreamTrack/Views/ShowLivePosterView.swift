@@ -7,12 +7,27 @@
 
 import SwiftUI
 
+
+
 struct ShowLivePosterView: View {
+  
+  @Binding var url: URL?
+  
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+      AsyncImage(url: url) { phase in
+        if let image = phase.image {
+          image
+            .resizable()
+            .scaledToFit()
+        } else if phase.error != nil {
+          Text("Error loading image")
+        } else {
+          Color.gray
+        }
+      }
     }
 }
 
-#Preview {
-    ShowLivePosterView()
-}
+//#Preview {
+//    ShowLivePosterView()
+//}

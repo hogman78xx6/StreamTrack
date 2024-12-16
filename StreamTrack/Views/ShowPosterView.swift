@@ -8,11 +8,25 @@
 import SwiftUI
 
 struct ShowPosterView: View {
-    var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+  
+  let url: URL
+  
+  var body: some View {
+    AsyncImage(url: url) { phase in
+      if let image = phase.image {
+        image
+          .resizable()
+          .scaledToFit()
+      } else if phase.error != nil {
+        Text("Error loading image")
+      } else {
+        Color.gray
+      }
     }
+  }
+      
 }
 
-#Preview {
-    ShowPosterView()
-}
+//#Preview {
+//  ShowPosterView(url: <#URL#>)
+//}

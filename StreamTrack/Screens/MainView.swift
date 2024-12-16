@@ -14,15 +14,20 @@ struct MainView: View {
       VStack {
         TabView {
           
-          ListOfShowsView()
+          ListShowsScreen()
             .tabItem { Image(systemName: "inset.filled.tv") }
           
-          ListOfChannelsView()
+          ListOfChannelsScreen()
             .tabItem { Image(systemName: "circle.grid.3x3") }
           
+          AboutScreen()
+            .tabItem { Image(systemName: "info.circle") }
+          
         }
+          .tabViewStyle(.sidebarAdaptable)
       }
-  }
+   
+    }
 }
 
 #Preview {

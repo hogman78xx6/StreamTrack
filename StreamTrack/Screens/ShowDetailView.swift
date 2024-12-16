@@ -9,6 +9,10 @@ import SwiftUI
 
 struct ShowDetailView: View {
   
+  @Environment(OMDBViewModel.self) private var omdbViewModel
+  
+  @State private var omdbModel: OMDBModel?
+  
   @Environment(\.dismiss) private var dismiss
   @Environment(\.modelContext) private var context
   
@@ -17,20 +21,28 @@ struct ShowDetailView: View {
   @State private var title: String = ""
   @State private var startDate: Date = Date()
   @State private var completed: Bool = false
-  @State private var airDayOfWeek: DayOfWeek?
+  @State private var airDayOfWeek: DayOfWeek = .noSelection
   @State private var airTime: Date?
   @State private var endDate: Date?
   @State private var numberOfEpisodesWatched: Int?
   @State private var numberOfEpisodesAvailable: Int?
   @State private var showType: ShowType = .series
   @State private var selectedChannels: Set<Channel> = []
-  @State private var notes: String?
+  @State private var notes: String = ""
+  @State private var posterUrl: String?
   
   @State private var deleteAlert: Bool = false
   
+  @State private var holdUrl: URL?
+  
+  @FocusState private var textFiledIsFocused: Bool
+
+  
   private var isFormValid: Bool {
-    !title.isEmptyOrWhitespace && !selectedChannels.isEmpty
+    !title.isEmptyOrWhitespace && !selectedChannels.isEmpty && !textFiledIsFocused
   }
+  
+  @State private var posterURL: String = ""
   
   private func deleteShow(_ show: Show) {
       context.delete(show)
@@ -47,18 +59,41 @@ struct ShowDetailView: View {
   var body: some View {
     
     Form {
-      Button("Delete Show", role: .destructive) {
-        deleteAlert = true
+      HStack {
+        Button("Delete Show", role: .destructive) {
+          deleteAlert = true
+        }
+        .buttonStyle(.borderedProminent)
+        VStack {
+//          if let posterUrl = posterUrl {
+//            holdUrl = URL(string: posterUrl)
+//            ShowLivePosterView(url: $holdUrl)
+//              .frame(width: 100, height: 100)
+//          } else {
+//            Text("N/A")
+//              .frame(width: 80, height: 80)
+//          }
+        }
+
       }
-      .buttonStyle(.borderedProminent)
-      
       HStack {
         Text("Show Title: ")
         TextField("Title", text: $title, axis: .vertical)
           .textFieldStyle(.roundedBorder)
-          .multilineSubmit(for: $title)
+          .textFieldStyle(.roundedBorder)
+          .onMultilineSubmit(for: $title) {
+            textFiledIsFocused = false
+            guard !title.isEmptyOrWhitespace else { return }
+            Task {
+              print("Getting title poster of \(title)")
+              await omdbViewModel.getRequest(title)
+            }
+            print("Got URL in title submit: \(posterURL)")
+            posterURL = omdbViewModel.omdbModel.poster
+          }
+          .focused($textFiledIsFocused, equals: true)
       }
-      DatePicker("Start Date", selection: $startDate, in: Date()..., displayedComponents: [.date])
+      DatePicker("Premiere Date", selection: $startDate, in: Date()..., displayedComponents: [.date])
       
       Picker("Show Type", selection: $showType) {
         ForEach(ShowType.allCases) { showType in
@@ -71,7 +106,7 @@ struct ShowDetailView: View {
       }
       
       Section("OPtional Fields") {
-        Picker("Air Day of Week", selection: $airDayOfWeek) {
+        Picker("New Show Premiere Day", selection: $airDayOfWeek) {
           ForEach(DayOfWeek.allCases) { dayOfWeek in
             Text(String(describing: dayOfWeek)).tag(dayOfWeek)
           }
@@ -92,30 +127,44 @@ struct ShowDetailView: View {
       title = show.title
       startDate = show.startDate
       completed = show.completed
-      airDayOfWeek = show.airDayOfWeek
+      airDayOfWeek = show.airDayOfWeek ?? .noSelection
       airTime = show.airTime
       endDate = show.endDate
       numberOfEpisodesWatched = show.numberOfEpisodesWatched
       numberOfEpisodesAvailable = show.numberOfEpisodesAvailable
       showType = show.showType
-      notes = show.notes
-      if let channels = show.channels {
-        selectedChannels = Set(channels)
-      }
+      if let notes = show.notes { self.notes = notes }
+      selectedChannels = Set(show.channels)
+      posterUrl = show.posterUrl
     }
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
         Button("Save") {
-          let show = Show(title: title, startDate: startDate, completed: completed, showType: showType)
+          show.title = title
+          show.startDate = startDate
+          show.completed = completed
+          show.showTypeId = showType.id
+          show.notes = notes
           
           show.channels = Array(selectedChannels)
           
+          show.airDayOfWeekId = airDayOfWeek.id
+          
           // load the optionals if they are not nil
-          if let airDayOfWeek { show.airDayOfWeekId = airDayOfWeek.id }
           if let airTime { show.airTime = airTime }
           if let endDate { show.endDate = endDate }
           if let numberOfEpisodesWatched { show.numberOfEpisodesWatched = numberOfEpisodesWatched }
           if let numberOfEpisodesAvailable { show.numberOfEpisodesAvailable = numberOfEpisodesAvailable }
+          if notes != "" { show.notes = notes }
+          
+          //omdbModel = omdbViewModel.omdbModel
+          if !omdbViewModel.validOMDB {
+            show.posterUrl = ""
+          } else if omdbViewModel.validOMDB && omdbViewModel.omdbModel.poster != "" {
+            show.posterUrl = omdbViewModel.omdbModel.poster
+            print("Poster URL: \(omdbViewModel.omdbModel.poster)")
+            omdbViewModel.omdbModel = OMDBModel.defaultOMDB()
+          }
           
           context.insert(show)
           

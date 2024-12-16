@@ -6,3 +6,16 @@
 //
 
 import Foundation
+import SwiftUI
+
+extension Binding {
+    func bindUnwrap<T>(defaultVal: T) -> Binding<T> where Value == T? {
+        Binding<T>(
+            get: {
+                self.wrappedValue ?? defaultVal
+            }, set: {
+                self.wrappedValue = $0
+            }
+        )
+    }
+}
