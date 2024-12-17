@@ -52,6 +52,7 @@ struct ChannelDetailView: View {
     VStack {
       Form {
         TextField("Channel Name", text: $channelName)
+          .textFieldStyle(.roundedBorder)
         
         Picker("Channel Type", selection: $channelType) {
           ForEach(ChannelType.allCases) { channelType in

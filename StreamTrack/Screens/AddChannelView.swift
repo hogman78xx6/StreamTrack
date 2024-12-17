@@ -25,6 +25,7 @@ struct AddChannelView: View {
       NavigationStack {
         Form {
           TextField("Channel Name", text: $channelName)
+            .textFieldStyle(.roundedBorder)
           
           Picker("Channel Type", selection: $channelType) {
             ForEach(ChannelType.allCases) { channelType in
@@ -35,6 +36,10 @@ struct AddChannelView: View {
         }
         .navigationTitle("Add Channel")
         .toolbar {
+          ToolbarItem {
+            Button("Cancel") { dismiss() }
+              .buttonStyle(.bordered)
+          }
           ToolbarItem {
             Button("Add") {
               let channel = Channel(name: channelName, channelType: channelType)
@@ -55,8 +60,12 @@ struct AddChannelView: View {
             .disabled(!isFormValid)
           }
         }
-        
-      }
+        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(.navBar, for: .navigationBar)
+        .environment(\.colorScheme, .dark)
+      } //
+      
       
     
     }

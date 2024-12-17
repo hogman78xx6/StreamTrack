@@ -186,6 +186,7 @@ struct ShowDetailView: View {
       Text("Are you sure you want to delete \(show.title)?")
         .font(.largeTitle)
     }
+    .environment(\.colorScheme, .dark)
     
   }
 }

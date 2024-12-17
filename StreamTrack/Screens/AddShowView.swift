@@ -165,6 +165,10 @@ struct AddShowView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){ textFiledIsFocused = .title }
 
       }
+      .toolbarColorScheme(.dark, for: .navigationBar)
+      .toolbarBackground(.visible, for: .navigationBar)
+      .toolbarBackground(.navBar, for: .navigationBar)
+      .environment(\.colorScheme, .dark)
       
     }
     
