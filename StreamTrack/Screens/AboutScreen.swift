@@ -44,7 +44,7 @@ struct AboutScreen: View {
           Text ("Copyright © 2024 Michael Knych")
           Text ("All rights reserved")
           
-          Text("Release: \(UIApplication.release)")
+          Text("Version: \(UIApplication.release)")
             
         }
         .font(.headline)

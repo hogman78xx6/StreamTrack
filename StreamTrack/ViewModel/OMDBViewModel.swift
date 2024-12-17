@@ -36,6 +36,7 @@ enum NetworkError: Error {
   case failedToDecodeResponse
 }
 
+@MainActor
 class WebService: Codable {
   func downloadData<T: Codable>(fromURL: String) async -> T? {
     do {

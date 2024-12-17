@@ -10,6 +10,14 @@ import SwiftData
 
 struct AddShowView: View {
   
+  enum Field: Hashable {
+    case none
+    case title
+    case numberOfEpisodesWatched
+    case numberOfEpisodesAvailable
+    case notes
+  }
+  
   @Environment(OMDBViewModel.self) private var omdbViewModel
   
   @State private var omdbModel: OMDBModel?
@@ -29,9 +37,13 @@ struct AddShowView: View {
   
   @State private var notes: String = ""
   
+  @FocusState private var textFiledIsFocused: Field?
+  
+  @State private var showTitleSubmitted: Bool = false
+  
   
   private var isFormValid: Bool {
-    !title.isEmptyOrWhitespace && !selectedChannels.isEmpty
+    !title.isEmptyOrWhitespace && !selectedChannels.isEmpty && showTitleSubmitted
   }
   
   @State private var posterURL: String = ""
@@ -45,16 +57,20 @@ struct AddShowView: View {
           Text("Show Title: ")
           TextField("Title", text: $title, axis: .vertical)
             .textFieldStyle(.roundedBorder)
-            .onMultilineSubmit(for: $title) {
+            .onMultilineSubmit(for: $title, submitLabel: .continue) {
               guard !title.isEmptyOrWhitespace else { return }
               Task {
                 print("Getting title poster of \(title)")
                 await omdbViewModel.getRequest(title)
               }
+              print(">>>  Return from getRequest")
+              showTitleSubmitted = true
             }
+            .focused($textFiledIsFocused, equals: .title)
           
         }
         DatePicker("Premiere Date", selection: $startDate, displayedComponents: [.date])
+          .datePickerStyle(.compact)
         
         Picker("Show Type", selection: $showType) {
           ForEach(ShowType.allCases) { showType in
@@ -62,22 +78,36 @@ struct AddShowView: View {
           }
         }
         .pickerStyle(.menu)
-        
-        Section("OPtional Fields") {
-          Picker("New Show Premiere Day", selection: $airDayOfWeek) {
-            ForEach(DayOfWeek.allCases) { dayOfWeek in
-              Text(String(describing: dayOfWeek)).tag(dayOfWeek)
+        if showTitleSubmitted {
+          Section("OPtional Fields") {
+            Picker("New Show Premiere Day", selection: $airDayOfWeek) {
+              ForEach(DayOfWeek.allCases) { dayOfWeek in
+                Text(String(describing: dayOfWeek)).tag(dayOfWeek)
+              }
             }
+            .pickerStyle(.menu)
+            
+            DatePicker("Air Time", selection: $airTime.bindUnwrap(defaultVal: Date()), displayedComponents: [.hourAndMinute])
+            DatePicker("End Date", selection: $endDate.bindUnwrap(defaultVal: Date()), in: Date()..., displayedComponents: [.date])
+            TextField("Number of Episodes Watched", value: $numberOfEpisodesWatched, format: .number)
+              .keyboardType(.numberPad)
+              .focused($textFiledIsFocused, equals: .numberOfEpisodesWatched)
+            TextField("Number of Episodes Available", value: $numberOfEpisodesAvailable, format: .number)
+              .keyboardType(.numberPad)
+              .focused($textFiledIsFocused, equals: .numberOfEpisodesAvailable)
+              .toolbar {
+                if UIDevice.current.localizedModel == "iPhone" {
+                  ToolbarItem(placement: .keyboard) {
+                    Button("Enter") { textFiledIsFocused = Optional.none }
+                  }
+                }
+              }
+            
+            TextField("Notes", text: $notes, axis: .vertical)
+              .multilineTextAlignment(.leading)
+              .multilineSubmit(for: $notes, submitLabel: .return)
+              .focused($textFiledIsFocused, equals: .notes)
           }
-          .pickerStyle(.menu)
-          
-          DatePicker("Air Time", selection: $airTime.bindUnwrap(defaultVal: Date()), displayedComponents: [.hourAndMinute])
-          DatePicker("End Date", selection: $endDate.bindUnwrap(defaultVal: Date()), in: Date()..., displayedComponents: [.date])
-          TextField("Number of Episodes Watched", value: $numberOfEpisodesWatched, format: .number)
-          TextField("Number of Episodes Available", value: $numberOfEpisodesAvailable, format: .number)
-          TextField("Notes", text: $notes, axis: .vertical)
-            .multilineTextAlignment(.leading)
-            .multilineSubmit(for: $notes)
         }
         
         Section("Select Channels") {
@@ -107,10 +137,11 @@ struct AddShowView: View {
             if let numberOfEpisodesAvailable { show.numberOfEpisodesAvailable = numberOfEpisodesAvailable }
             if notes != "" { show.notes = notes }
             
+            
             // omdbModel = omdbViewModel.omdbModel
             //if let omdbModel {
             show.posterUrl = omdbViewModel.omdbModel.poster
-              print("Poster URL: \(omdbViewModel.omdbModel.poster)")
+            print("Poster URL: \(omdbViewModel.omdbModel.poster)")
             //}
             omdbViewModel.omdbModel = OMDBModel.defaultOMDB()
             
@@ -129,6 +160,10 @@ struct AddShowView: View {
           .disabled(!isFormValid)
         }
         
+      }
+      .onAppear() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){ textFiledIsFocused = .title }
+
       }
       
     }
