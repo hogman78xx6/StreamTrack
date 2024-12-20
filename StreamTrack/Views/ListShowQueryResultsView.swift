@@ -27,7 +27,6 @@ struct ListShowQueryResultsView: View {
         .font(.headline)
         .textCase(nil)
       }
-      
       .scrollContentBackground(.hidden)
       .background(Color.showBackground)
       .navigationDestination(for: Show.self) { show in

@@ -36,7 +36,6 @@ struct ListShowsFilteredView: View {
   
   var body: some View {
     VStack {
-      
         switch filterOption {
         case .title(let showTitle):
           if shows.isEmpty {
@@ -71,8 +70,6 @@ struct ListShowsFilteredView: View {
           }
         }
         
-     
-
         
    
     }  // VStack

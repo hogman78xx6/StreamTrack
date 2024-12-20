@@ -60,7 +60,7 @@ struct StreamTrackApp: App {
         WindowGroup {
             MainView()
             .environment(omdbViewModel)
-            .environment(\.colorScheme, .dark)
+            //.environment(\.colorScheme, .dark)
         }
         .modelContainer(appContainer)
         

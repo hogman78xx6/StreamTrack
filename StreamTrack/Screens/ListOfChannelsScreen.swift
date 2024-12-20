@@ -48,6 +48,16 @@ struct ListOfChannelsScreen: View {
           Color.channelBackground
             .ignoresSafeArea()
           VStack {
+            VStack {
+              Text("Channels")
+                .foregroundStyle(Color.white)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+              
+            }
+            .padding(6)
+            .frame(maxWidth: .infinity)
+            .background(Color.navBar)
             if channels.isEmpty {
               ContentUnavailableView {
                 Text("No channels yet")
@@ -82,7 +92,7 @@ struct ListOfChannelsScreen: View {
         .toolbarBackground(.navBar, for: .navigationBar)
         .toolbarBackground(.visible, for: .tabBar)
         .toolbarBackground(.navBar, for: .tabBar)
-        .navigationTitle("Channels")
+        //.navigationTitle("Channels")
         
         .toolbar {
           ToolbarItem(placement: .topBarTrailing) {
@@ -95,7 +105,6 @@ struct ListOfChannelsScreen: View {
         }
         .sheet(isPresented: $showAddChannel) {
           AddChannelView()
-            .presentationDetents([.fraction(0.50)])
         }
         
     

@@ -50,6 +50,18 @@ struct ChannelDetailView: View {
   var body: some View {
     
     VStack {
+      HStack {
+        Button("Delete Channel", role: .destructive) {
+          deleteError = delete(channel, deleteError: $deleteError)
+          if !deleteError {
+            goodDelete = true
+            //dismiss()
+          }
+        }
+        Spacer()
+      }
+      
+      .buttonStyle(.borderedProminent)
       Form {
         TextField("Channel Name", text: $channelName)
           .textFieldStyle(.roundedBorder)

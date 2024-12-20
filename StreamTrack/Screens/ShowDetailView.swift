@@ -36,28 +36,27 @@ struct ShowDetailView: View {
   @State private var holdUrl: URL?
   
   @FocusState private var textFiledIsFocused: Bool
-
+  
   
   private var isFormValid: Bool {
     !title.isEmptyOrWhitespace && !selectedChannels.isEmpty && !textFiledIsFocused
   }
   
-  @State private var posterURL: String = ""
+  //@State private var posterURL: String = ""
   
   private func deleteShow(_ show: Show) {
-      context.delete(show)
-  
-      do {
-        try context.save()
-        dismiss()
-      } catch {
-        print(error.localizedDescription)
-      }
-  
+    context.delete(show)
+    
+    do {
+      try context.save()
+      dismiss()
+    } catch {
+      print(error.localizedDescription)
+    }
+    
   }
   
   var body: some View {
-    
     Form {
       HStack {
         Button("Delete Show", role: .destructive) {
@@ -65,17 +64,18 @@ struct ShowDetailView: View {
         }
         .buttonStyle(.borderedProminent)
         VStack {
-//          if let posterUrl = posterUrl {
-//            holdUrl = URL(string: posterUrl)
-//            ShowLivePosterView(url: $holdUrl)
-//              .frame(width: 100, height: 100)
-//          } else {
-//            Text("N/A")
-//              .frame(width: 80, height: 80)
-//          }
-        }
 
+          if posterUrl != nil && !posterUrl!.isEmpty {
+            ShowLivePosterView(url: omdbViewModel.omdbModel.poster, posterUrl: posterUrl!)
+              .frame(width: 100, height: 100)
+          } else {
+            Text("N/A")
+              .frame(width: 100, height: 100)
+          }
+        }
+        
       }
+      
       HStack {
         Text("Show Title: ")
         TextField("Title", text: $title, axis: .vertical)
@@ -84,12 +84,14 @@ struct ShowDetailView: View {
           .onMultilineSubmit(for: $title) {
             textFiledIsFocused = false
             guard !title.isEmptyOrWhitespace else { return }
-            Task {
-              print("Getting title poster of \(title)")
-              await omdbViewModel.getRequest(title)
-            }
-            print("Got URL in title submit: \(posterURL)")
-            posterURL = omdbViewModel.omdbModel.poster
+            omdbViewModel.getRequest(title)
+//            Task {
+//              print("Getting title poster of \(title)")
+//              await omdbViewModel.getRequest(title)
+//            }
+            posterUrl = omdbViewModel.omdbModel.poster
+            print("Got URL in title submit: \(String(describing: posterUrl))")
+            
           }
           .focused($textFiledIsFocused, equals: true)
       }
@@ -162,6 +164,7 @@ struct ShowDetailView: View {
             show.posterUrl = ""
           } else if omdbViewModel.validOMDB && omdbViewModel.omdbModel.poster != "" {
             show.posterUrl = omdbViewModel.omdbModel.poster
+            posterUrl = omdbViewModel.omdbModel.poster
             print("Poster URL: \(omdbViewModel.omdbModel.poster)")
             omdbViewModel.omdbModel = OMDBModel.defaultOMDB()
           }
@@ -181,15 +184,30 @@ struct ShowDetailView: View {
     }
     .confirmationDialog("Delete Show", isPresented: $deleteAlert) {
       Button("Delete Show") { deleteShow(show) }
-      .foregroundColor(.red)
+        .foregroundColor(.red)
     } message: {
       Text("Are you sure you want to delete \(show.title)?")
         .font(.largeTitle)
     }
-    .environment(\.colorScheme, .dark)
-    
   }
+  
+  func fetchdataFromURL(urlString: String) async throws -> Data {
+      guard let url = URL(string: urlString) else {
+          throw URLError(.badURL)
+      }
+      
+      let (data, response) = try await URLSession.shared.data(from: url)
+      
+      guard let httpResponse = response as? HTTPURLResponse,
+            (200..<300).contains(httpResponse.statusCode) else {
+          throw URLError(.badServerResponse)
+      }
+      
+      return data
+  }
+  
 }
+
 
 //#Preview {
 //    ShowDetailView()

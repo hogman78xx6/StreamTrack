@@ -17,8 +17,10 @@ struct AddChannelView: View {
   
   @State private var channelType: ChannelType = .network
   
+  @FocusState private var textFieldIsFocused: Bool
+  
   private var isFormValid: Bool {
-    !channelName.isEmptyOrWhitespace
+    !channelName.isEmptyOrWhitespace && !textFieldIsFocused
   }
   
     var body: some View {
@@ -26,6 +28,7 @@ struct AddChannelView: View {
         Form {
           TextField("Channel Name", text: $channelName)
             .textFieldStyle(.roundedBorder)
+            .focused($textFieldIsFocused)
           
           Picker("Channel Type", selection: $channelType) {
             ForEach(ChannelType.allCases) { channelType in
@@ -63,7 +66,7 @@ struct AddChannelView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarBackground(.navBar, for: .navigationBar)
-        .environment(\.colorScheme, .dark)
+        //.environment(\.colorScheme, .dark)
       } //
       
       

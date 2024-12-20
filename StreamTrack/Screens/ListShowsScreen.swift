@@ -26,16 +26,32 @@ struct ListShowsScreen: View {
   var body: some View {
     NavigationStack {
       
+      ZStack {
+        Color.showBackground
+          .ignoresSafeArea()
+        
         VStack {
-
+          VStack {
+            Text("StreamTrack Shows")
+              .foregroundStyle(Color.white)
+              .font(.largeTitle)
+              .fontWeight(.bold)
+            
+          }
+          .padding(6)
+          .frame(maxWidth: .infinity)
+          .background(Color.navBar)
+          
           ListShowsFilteredView(filterOption: filterSelectionConfig.filter)
+            .padding(0)
         }
+      }
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarBackground(.navBar, for: .navigationBar)
         .toolbarBackground(.visible, for: .tabBar)
         .toolbarBackground(.navBar, for: .tabBar)
-        .navigationTitle("StreamTrack Shows")
+        //.navigationTitle("StreamTrack Shows")
         .toolbar {
           ToolbarItem(placement: .topBarLeading) {
             Button("Filter") {

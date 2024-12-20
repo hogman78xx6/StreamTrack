@@ -11,20 +11,43 @@ import SwiftUI
 
 struct ShowLivePosterView: View {
   
-  @Binding var url: URL?
+  @Environment(OMDBViewModel.self) private var omdbViewModel
+  
+  var url: String
+  
+  let posterUrl: String
+  
+  @State var urlString: String = ""
   
     var body: some View {
-      AsyncImage(url: url) { phase in
-        if let image = phase.image {
-          image
-            .resizable()
-            .scaledToFit()
-        } else if phase.error != nil {
-          Text("Error loading image")
+      VStack {
+        
+          AsyncImage(url: URL(string: urlString)) { phase in
+            if let image = phase.image {
+              image
+                .resizable()
+                .scaledToFit()
+            } else if phase.error != nil {
+              Text("Error loading image")
+            } else {
+              Color.gray
+            }
+          }
+         
+        
+      }
+      .onAppear {
+        if omdbViewModel.omdbModel.poster == "" {
+          print("======>>>  posterUrl: \(posterUrl)")
+          urlString = posterUrl
         } else {
-          Color.gray
+          print("======>>>  omdbViewModel.omdbModel.poster: \(omdbViewModel.omdbModel.poster)")
+          urlString = omdbViewModel.omdbModel.poster
+          
         }
       }
+      
+      
     }
 }
 

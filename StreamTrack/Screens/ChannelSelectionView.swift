@@ -12,6 +12,8 @@ struct ChannelSelectionView: View {
   
   @Query(sort: \Channel.name, order: .forward) private var channels: [Channel]
   
+  @Environment(\.modelContext) private var context
+  
   @Binding var selectedChannels: Set<Channel>
   
     var body: some View {

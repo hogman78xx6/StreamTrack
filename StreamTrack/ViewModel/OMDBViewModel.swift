@@ -8,9 +8,9 @@
 import Foundation
 import Observation
 
-@MainActor
+//@MainActor
 @Observable
-class OMDBViewModel {
+class OMDBViewModelOld {
   var omdbModel: OMDBModel = OMDBModel.defaultOMDB()
   var validOMDB: Bool = true
   
@@ -18,10 +18,12 @@ class OMDBViewModel {
     let urlString = String("https://www.omdbapi.com/?t=\(title)&apikey=a502de93")
     guard let downloadedResult: OMDBModel = await WebService().downloadData(fromURL: urlString) else {
       validOMDB = false
+      print("+++  Bad request results +++")
       return
     }
     omdbModel = downloadedResult
     validOMDB = true
+    print("========> Good Request Results. Poster: \(downloadedResult.poster)")
   }
 }
 
@@ -36,7 +38,7 @@ enum NetworkError: Error {
   case failedToDecodeResponse
 }
 
-@MainActor
+//@MainActor
 class WebService: Codable {
   func downloadData<T: Codable>(fromURL: String) async -> T? {
     do {
