@@ -9,6 +9,14 @@ import SwiftUI
 
 struct ShowDetailView: View {
   
+  enum Field: Hashable {
+    case none
+    case title
+    case numberOfEpisodesWatched
+    case numberOfEpisodesAvailable
+    case notes
+  }
+  
   @Environment(OMDBViewModel.self) private var omdbViewModel
   
   @State private var omdbModel: OMDBModel?
@@ -24,8 +32,10 @@ struct ShowDetailView: View {
   @State private var airDayOfWeek: DayOfWeek = .noSelection
   @State private var airTime: Date?
   @State private var endDate: Date?
-  @State private var numberOfEpisodesWatched: Int?
-  @State private var numberOfEpisodesAvailable: Int?
+//  @State private var numberOfEpisodesWatched: Int?
+//  @State private var numberOfEpisodesAvailable: Int?
+  @State private var numberOfEpisodesWatched: Int = 0
+  @State private var numberOfEpisodesAvailable: Int = 0
   @State private var showType: ShowType = .series
   @State private var selectedChannels: Set<Channel> = []
   @State private var notes: String = ""
@@ -33,17 +43,14 @@ struct ShowDetailView: View {
   
   @State private var deleteAlert: Bool = false
   
-  @State private var holdUrl: URL?
+  @State private var reloadPoster: Bool = true
   
-  @FocusState private var textFiledIsFocused: Bool
-  
+  @FocusState private var textFiledIsFocused: Field?
   
   private var isFormValid: Bool {
-    !title.isEmptyOrWhitespace && !selectedChannels.isEmpty && !textFiledIsFocused
+    !title.isEmptyOrWhitespace && !selectedChannels.isEmpty && textFiledIsFocused != .title
   }
-  
-  //@State private var posterURL: String = ""
-  
+
   private func deleteShow(_ show: Show) {
     context.delete(show)
     
@@ -64,12 +71,12 @@ struct ShowDetailView: View {
         }
         .buttonStyle(.borderedProminent)
         VStack {
-
           if posterUrl != nil && !posterUrl!.isEmpty {
-            ShowLivePosterView(url: omdbViewModel.omdbModel.poster, posterUrl: posterUrl!)
+            ShowLivePosterView(url: omdbViewModel.omdbModel.poster, posterUrl: $posterUrl)
               .frame(width: 100, height: 100)
           } else {
             Text("N/A")
+              .background(Color.gray.opacity(0.5))
               .frame(width: 100, height: 100)
           }
         }
@@ -82,18 +89,15 @@ struct ShowDetailView: View {
           .textFieldStyle(.roundedBorder)
           .textFieldStyle(.roundedBorder)
           .onMultilineSubmit(for: $title) {
-            textFiledIsFocused = false
+            print("--- In the onMultilineSubmit----")
             guard !title.isEmptyOrWhitespace else { return }
-            omdbViewModel.getRequest(title)
-//            Task {
-//              print("Getting title poster of \(title)")
-//              await omdbViewModel.getRequest(title)
-//            }
-            posterUrl = omdbViewModel.omdbModel.poster
-            print("Got URL in title submit: \(String(describing: posterUrl))")
-            
+            print("About to call getRequest. Title: \(title)")
+            Task(priority: .high) {
+              await omdbViewModel.getRequest(title)
+              reloadPoster.toggle()
+            }
           }
-          .focused($textFiledIsFocused, equals: true)
+          .focused($textFiledIsFocused, equals: .title)
       }
       DatePicker("Premiere Date", selection: $startDate, in: Date()..., displayedComponents: [.date])
       
@@ -115,8 +119,27 @@ struct ShowDetailView: View {
         }
         DatePicker("Air Time", selection: $airTime.bindUnwrap(defaultVal: Date()), displayedComponents: [.hourAndMinute])
         DatePicker("End Date", selection: $endDate.bindUnwrap(defaultVal: Date()), in: Date()..., displayedComponents: [.date])
-        TextField("Number of Episodes Watched", value: $numberOfEpisodesWatched, format: .number)
-        TextField("Number of Episodes Available", value: $numberOfEpisodesAvailable, format: .number)
+        
+        Picker("Number of Episodes Watched", selection: $numberOfEpisodesWatched) {
+          ForEach(0...50, id: \.self) { value in
+            Text(String(value)).tag(String(value))
+          }
+        }
+        .pickerStyle(.menu)
+        
+        Picker("Number of Episodes Available", selection: $numberOfEpisodesAvailable) {
+          ForEach(0...50, id: \.self) { value in
+            Text(String(value)).tag(String(value))
+          }
+        }
+        .pickerStyle(.menu)
+        
+//        TextField("Number of Episodes Watched", value: $numberOfEpisodesWatched, format: .number)
+//          .keyboardType(.numberPad)
+//          .focused($textFiledIsFocused, equals: .numberOfEpisodesWatched)
+//        TextField("Number of Episodes Available", value: $numberOfEpisodesAvailable, format: .number)
+//          .keyboardType(.numberPad)
+//          .focused($textFiledIsFocused, equals: .numberOfEpisodesAvailable)
       }
       
       Section("Select Channels") {
@@ -132,12 +155,16 @@ struct ShowDetailView: View {
       airDayOfWeek = show.airDayOfWeek ?? .noSelection
       airTime = show.airTime
       endDate = show.endDate
-      numberOfEpisodesWatched = show.numberOfEpisodesWatched
-      numberOfEpisodesAvailable = show.numberOfEpisodesAvailable
+      numberOfEpisodesWatched = show.numberOfEpisodesWatched ?? 0
+      numberOfEpisodesAvailable = show.numberOfEpisodesAvailable ?? 0
       showType = show.showType
       if let notes = show.notes { self.notes = notes }
       selectedChannels = Set(show.channels)
       posterUrl = show.posterUrl
+    }
+    .onChange(of: reloadPoster) {
+      posterUrl = omdbViewModel.omdbModel.poster
+      print("OnChange - Updated poster URL from Task: \(String(describing: posterUrl))")
     }
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
@@ -155,17 +182,19 @@ struct ShowDetailView: View {
           // load the optionals if they are not nil
           if let airTime { show.airTime = airTime }
           if let endDate { show.endDate = endDate }
-          if let numberOfEpisodesWatched { show.numberOfEpisodesWatched = numberOfEpisodesWatched }
-          if let numberOfEpisodesAvailable { show.numberOfEpisodesAvailable = numberOfEpisodesAvailable }
+          if numberOfEpisodesWatched > 0 { show.numberOfEpisodesWatched = numberOfEpisodesWatched }
+          if numberOfEpisodesAvailable > 0 { show.numberOfEpisodesAvailable = numberOfEpisodesAvailable }
+
           if notes != "" { show.notes = notes }
           
           //omdbModel = omdbViewModel.omdbModel
           if !omdbViewModel.validOMDB {
             show.posterUrl = ""
+            print("validOMDB was not true: \(omdbViewModel.validOMDB)")
           } else if omdbViewModel.validOMDB && omdbViewModel.omdbModel.poster != "" {
             show.posterUrl = omdbViewModel.omdbModel.poster
             posterUrl = omdbViewModel.omdbModel.poster
-            print("Poster URL: \(omdbViewModel.omdbModel.poster)")
+            print("Poster URL Set: \(omdbViewModel.omdbModel.poster)")
             omdbViewModel.omdbModel = OMDBModel.defaultOMDB()
           }
           

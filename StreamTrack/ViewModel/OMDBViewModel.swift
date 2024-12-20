@@ -10,20 +10,51 @@ import Observation
 
 //@MainActor
 @Observable
-class OMDBViewModelOld {
+class OMDBViewModel {
   var omdbModel: OMDBModel = OMDBModel.defaultOMDB()
-  var validOMDB: Bool = true
+  var validOMDB: Bool = false
+  
+//  func getRequest(_ title: String) async {
+//    let urlString = String("https://www.omdbapi.com/?t=\(title)&apikey=a502de93")
+//    guard let downloadedResult: OMDBModel = await WebService().downloadData(fromURL: urlString) else {
+//      validOMDB = false
+//      print("+++  Bad request results +++")
+//      return
+//    }
+//    omdbModel = downloadedResult
+//    validOMDB = true
+//    print("========> Good Request Results. Poster: \(downloadedResult.poster)")
+//  }
   
   func getRequest(_ title: String) async {
-    let urlString = String("https://www.omdbapi.com/?t=\(title)&apikey=a502de93")
-    guard let downloadedResult: OMDBModel = await WebService().downloadData(fromURL: urlString) else {
-      validOMDB = false
-      print("+++  Bad request results +++")
-      return
+    let fetchTask = Task {
+      print("Attempting URL Request for: \(title)")
+      let urlString = String("https://www.omdbapi.com/?t=\(title)&apikey=a502de93")
+      let url = URL(string: urlString)!
+      let (data, _) = try await URLSession.shared.data(from: url)
+      try Task.checkCancellation()
+      let decodedResponse = try? JSONDecoder().decode(OMDBModel.self, from: data)
+      print("+++++++++> Good Request Results. Poster: \(String(describing: decodedResponse?.poster))")
+      return decodedResponse
+      
     }
-    omdbModel = downloadedResult
-    validOMDB = true
-    print("========> Good Request Results. Poster: \(downloadedResult.poster)")
+      
+    do {
+      let omdbModel = try await fetchTask.value
+      if let omdbModel {
+        self.omdbModel = omdbModel
+        validOMDB = true
+        print("!!!!  WE GOT GOOD POSTER DATA  !!!!")
+      } else {
+        validOMDB = false
+        self.omdbModel = OMDBModel.defaultOMDB()
+        print("????? COULD NOT GET POSTER DATA  ???")
+      }
+        
+    } catch {
+      print("failed to get data from Url Task. Error: \(error)")
+    }
+  
   }
 }
 

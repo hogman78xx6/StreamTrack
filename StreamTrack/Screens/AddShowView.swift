@@ -59,7 +59,10 @@ struct AddShowView: View {
             .textFieldStyle(.roundedBorder)
             .onMultilineSubmit(for: $title, submitLabel: .continue) {
               guard !title.isEmptyOrWhitespace else { return }
-              omdbViewModel.getRequest(title)
+              Task(priority: .high) {
+                await omdbViewModel.getRequest(title)
+              }
+              
             }
             .focused($textFieldIsFocused, equals: .title)
           
@@ -79,21 +82,22 @@ struct AddShowView: View {
         if textFieldIsFocused != .title {
           Section("OPtional Fields") {
             
-              Picker("New Show Premiere Day", selection: $airDayOfWeek) {
-                ForEach(DayOfWeek.allCases) { dayOfWeek in
-                  Text(String(describing: dayOfWeek)).tag(dayOfWeek)
-                }
+            Picker("New Show Premiere Day", selection: $airDayOfWeek) {
+              ForEach(DayOfWeek.allCases) { dayOfWeek in
+                Text(String(describing: dayOfWeek)).tag(dayOfWeek)
               }
-              .pickerStyle(.menu)
-              
-              DatePicker("Air Time", selection: $airTime.bindUnwrap(defaultVal: Date()), displayedComponents: [.hourAndMinute])
-              DatePicker("End Date", selection: $endDate.bindUnwrap(defaultVal: Date()), in: Date()..., displayedComponents: [.date])
-              Picker("Number of Episodes Watched", selection: $numberOfEpisodesWatched) {
-                ForEach(0...50, id: \.self) { value in
-                  Text(String(value)).tag(String(value))
-                }
+            }
+            .pickerStyle(.menu)
+            
+            DatePicker("Air Time", selection: $airTime.bindUnwrap(defaultVal: Date()), displayedComponents: [.hourAndMinute])
+            DatePicker("End Date", selection: $endDate.bindUnwrap(defaultVal: Date()), in: Date()..., displayedComponents: [.date])
+            
+            Picker("Number of Episodes Watched", selection: $numberOfEpisodesWatched) {
+              ForEach(0...50, id: \.self) { value in
+                Text(String(value)).tag(String(value))
               }
-              .pickerStyle(.menu)
+            }
+            .pickerStyle(.menu)
             
             Picker("Number of Episodes Available", selection: $numberOfEpisodesAvailable) {
               ForEach(0...50, id: \.self) { value in
@@ -101,11 +105,11 @@ struct AddShowView: View {
               }
             }
             .pickerStyle(.menu)
-              
-              TextField("Notes", text: $notes, axis: .vertical)
-                .multilineTextAlignment(.leading)
-                .multilineSubmit(for: $notes, submitLabel: .return)
-                .focused($textFieldIsFocused, equals: .notes)
+            
+            TextField("Notes", text: $notes, axis: .vertical)
+              .multilineTextAlignment(.leading)
+              .multilineSubmit(for: $notes, submitLabel: .return)
+              .focused($textFieldIsFocused, equals: .notes)
             
           }
           
@@ -113,7 +117,7 @@ struct AddShowView: View {
         
         Section("Select Channels") {
           ChannelSelectionView(selectedChannels: $selectedChannels)
-           
+          
         }
         
       }
@@ -166,7 +170,7 @@ struct AddShowView: View {
       // forces the TextFiled for the showe title to be foucsed and the keyboard opened
       .onAppear() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5){ textFieldIsFocused = .title }
-
+        
       }
       .toolbarColorScheme(.dark, for: .navigationBar)
       .toolbarBackground(.visible, for: .navigationBar)

@@ -9,7 +9,7 @@ import Foundation
 
 
 @Observable
-class OMDBViewModel {
+class OMDBViewModelNew {
   
   var omdbModel: OMDBModel = OMDBModel.defaultOMDB()
   var validOMDB: Bool = false
